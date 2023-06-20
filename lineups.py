@@ -14,13 +14,17 @@ from pprint import pprint
 """
 Team Constraint Definitions
 """
-can_play_setter = frozenset(["Michelle", "Jasper"])
+can_play_setter = frozenset(["Michelle", "Jasper", "Melissa"])
 can_play_outside = frozenset(["Richard", "Daniel", "Steven", "Tiff"])
-can_play_opp = frozenset(["Chau", "Chris", "Michelle", "Jasper", "Tiff"])
+can_play_opp = frozenset(["Chau", "Chris", "Michelle", "Jasper", "Tiff", "Melissa"])
 can_play_middle = frozenset(["Steven", "Daniel", "Chris", "Chau", "Jasper"])
 can_play_libero = frozenset(["Bri"])
 
-girls_on_court = frozenset(["Michelle", "Tiff"])
+# Not counting libero because this is girls on the court at all times.
+girls_on_court = frozenset(["Michelle", "Tiff", "Melissa"])
+
+# These people can bring a lot of points as hitters.
+cannons = frozenset(["Richard", "Chris"])
 
 # Very flexible players may not have a preference.
 preferences = {
@@ -32,6 +36,7 @@ preferences = {
     "Michelle": frozenset(["s"]),
     "Bri": frozenset(["lib"]),
     "Steven": frozenset(["oh1", "oh2"]),
+    "Melissa": frozenset(["s"]),
 }
 
 
@@ -47,7 +52,7 @@ def is_lineup_valid(lineup):
     if len(players) != len(lineup):
         return False
     # Need firepower cuz we div-4
-    if "Richard" not in players or "Chris" not in players:
+    if not any(player in players for player in cannons):
         return False
     # Co-ed rules
     if len(players.intersection(girls_on_court)) < 2:
@@ -94,12 +99,15 @@ def constraints_satisfied_for(match):
 
 
 def produce_match_lineups():
+    n_working_matches = 0
     for match in combinations(generate_valid_lineups(), 3):
         if not constraints_satisfied_for(match):
             continue
         print("THIS WORKS")
+        n_working_matches += 1
         for lineup in match:
             pprint(lineup)
+    print(f"Computed {n_working_matches} lineups that work")
 
 
 if __name__ == "__main__":
