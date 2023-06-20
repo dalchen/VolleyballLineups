@@ -5,6 +5,13 @@ Going with a more Data-Oriented Programming style. Not using any strong types (e
 and purely using strings.
 
 Just gotta make sure the names of players are identifiable enough XD.
+
+TODOs (incomplete):
+* Generating lineups without a libero.
+
+Instructions on using this program:
+1. Update the definitions under "Team Constraint Definitions" for players that will be in/out.
+2. Run `python3 lineups.py` on the command line.
 """
 
 from collections import defaultdict
@@ -47,7 +54,7 @@ bringing in a dependency.
 Functions are pure and only depend on the (immutable) input and immutable globals.
 """
 def is_lineup_valid(lineup):
-    players = frozenset(lineup.values())
+    players = set(lineup.values())
     # No duplicate players in lineup
     if len(players) != len(lineup):
         return False
@@ -55,6 +62,7 @@ def is_lineup_valid(lineup):
     if not any(player in players for player in cannons):
         return False
     # Co-ed rules
+    players.remove(lineup["lib"])
     if len(players.intersection(girls_on_court)) < 2:
         return False
     return True
