@@ -6,6 +6,9 @@ and purely using strings.
 
 Just gotta make sure the names of players are identifiable enough XD.
 
+Limitations:
+* A match will either use a libero for all 3 sets or won't use a libero at all.
+
 Instructions on using this program:
 1. Update the definitions under "Team Constraint Definitions" for players that will be in/out.
    If a player is out, their name should NOT appear in *any* of the team constraint definitions
