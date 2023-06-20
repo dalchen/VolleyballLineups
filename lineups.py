@@ -6,11 +6,10 @@ and purely using strings.
 
 Just gotta make sure the names of players are identifiable enough XD.
 
-TODOs (incomplete):
-* Generating lineups without a libero.
-
 Instructions on using this program:
 1. Update the definitions under "Team Constraint Definitions" for players that will be in/out.
+   If a player is out, their name should NOT appear in *any* of the team constraint definitions
+   (remember to update preferences too!).
 2. Run `python3 lineups.py` on the command line.
 """
 
@@ -28,7 +27,7 @@ can_play_middle = frozenset(["Steven", "Daniel", "Chris", "Chau", "Jasper"])
 can_play_libero = frozenset(["Bri"])
 
 # Not counting libero because this is girls on the court at all times.
-girls_on_court = frozenset(["Michelle", "Tiff", "Melissa"])
+girls_non_libero = frozenset(["Michelle", "Tiff", "Melissa"])
 
 # These people can bring a lot of points as hitters.
 cannons = frozenset(["Richard", "Chris"])
@@ -62,18 +61,31 @@ def is_lineup_valid(lineup):
     if not any(player in players for player in cannons):
         return False
     # Co-ed rules
-    players.remove(lineup["lib"])
-    if len(players.intersection(girls_on_court)) < 2:
+    if "lib" in lineup:
+        players.remove(lineup["lib"])
+    if len(players.intersection(girls_non_libero)) < 2:
         return False
     return True
 
 
 def generate_lineups():
+    has_libero = len(can_play_libero) > 0
     for s in can_play_setter:
         for oh1, oh2 in combinations(can_play_outside, 2):
             for mb1, mb2 in combinations(can_play_middle, 2):
                 for opp in can_play_opp:
-                    for lib in can_play_libero:
+                    if has_libero:
+                        for lib in can_play_libero:
+                            yield {
+                                "s": s,
+                                "oh1": oh1,
+                                "oh2": oh2,
+                                "mb1": mb1,
+                                "mb2": mb2,
+                                "opp": opp,
+                                "lib": lib
+                            }
+                    else:
                         yield {
                             "s": s,
                             "oh1": oh1,
@@ -81,8 +93,8 @@ def generate_lineups():
                             "mb1": mb1,
                             "mb2": mb2,
                             "opp": opp,
-                            "lib": lib
                         }
+                            
 
 
 def generate_valid_lineups():
