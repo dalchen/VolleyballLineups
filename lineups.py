@@ -1,68 +1,81 @@
 #!/usr/bin/python3
 
-from itertools import combinations
-from dataclasses import dataclass, fields
-from enum import Enum, auto
-from pprint import pprint
-from typing import Optional
+"""
+Going with a more Data-Oriented Programming style. Not using any strong types (enums, classes)
+and purely using strings.
+
+Just gotta make sure the names of players are identifiable enough XD.
+"""
+
 from collections import defaultdict
+from itertools import combinations
+from pprint import pprint
 
-class Player(Enum):
-    Richard = auto()
-    Daniel = auto()
-    Chau = auto()
-    Tiff = auto()
-    Jasper = auto()
-    Michelle = auto()
-    Chris = auto()
-    Bri = auto()
-    Steven = auto()
+"""
+Team Constraint Definitions
+"""
+can_play_setter = frozenset(["Michelle", "Jasper"])
+can_play_outside = frozenset(["Richard", "Daniel", "Steven", "Tiff"])
+can_play_opp = frozenset(["Chau", "Chris", "Michelle", "Jasper", "Tiff"])
+can_play_middle = frozenset(["Steven", "Daniel", "Chris", "Chau", "Jasper"])
+can_play_libero = frozenset(["Bri"])
 
-can_play_setter = set([Player.Michelle, Player.Jasper])
-can_play_outside = set([Player.Richard, Player.Daniel, Player.Steven, Player.Tiff])
-can_play_oppo = set([Player.Chau, Player.Chris, Player.Michelle, Player.Jasper, Player.Tiff])
-can_play_middle = set([Player.Steven, Player.Daniel, Player.Chris, Player.Chau, Player.Jasper])
-can_play_libero = set([Player.Bri])
+girls_on_court = frozenset(["Michelle", "Tiff"])
 
-girls_on_court = set([Player.Michelle, Player.Tiff])
-
+# Very flexible players may not have a preference.
 preferences = {
-    Player.Richard: set(["oh1", "oh2"]),
-    Player.Daniel: set(["oh1", "oh2"]),
-    Player.Chau: set(["opp"]),
-    Player.Tiff: set(["oh1", "oh2"]),
-    Player.Jasper: set(["s"]),
-    Player.Michelle: set(["s"]),
-    Player.Bri: set(["lib"]),
-    Player.Steven: set(["oh1", "oh2"]),
+    "Richard": frozenset(["oh1", "oh2"]),
+    "Daniel": frozenset(["oh1", "oh2"]),
+    "Chau": frozenset(["opp"]),
+    "Tiff": frozenset(["oh1", "oh2"]),
+    "Jasper": frozenset(["s"]),
+    "Michelle": frozenset(["s"]),
+    "Bri": frozenset(["lib"]),
+    "Steven": frozenset(["oh1", "oh2"]),
 }
 
-valid_lineups = []
 
-for s in can_play_setter:
-    for oh1, oh2 in combinations(can_play_outside, 2):
-        for mb1, mb2 in combinations(can_play_middle, 2):
-            for opp in can_play_oppo:
-                for lib in can_play_libero:
-                    lineup = {
-                        's': s,
-                        'oh1': oh1,
-                        'oh2': oh2,
-                        'mb1': mb1,
-                        'mb2': mb2,
-                        'opp': opp,
-                        'lib': lib
-                    }
-                    players = set(lineup.values())
-                    if len(players) != len(lineup):
-                        continue
-                    # Need firepower cuz we div-4
-                    if Player.Richard not in players or Player.Chris not in players:
-                        continue
-                    # Co-ed rules
-                    if len(players.intersection(girls_on_court)) < 2:
-                        continue
-                    valid_lineups.append(lineup)
+"""
+Inputs to all these functions can be treated as immutable. Would use a frozendict if it existed w/o
+bringing in a dependency.
+
+Functions are pure and only depend on the (immutable) input and immutable globals.
+"""
+def is_lineup_valid(lineup):
+    players = frozenset(lineup.values())
+    # No duplicate players in lineup
+    if len(players) != len(lineup):
+        return False
+    # Need firepower cuz we div-4
+    if "Richard" not in players or "Chris" not in players:
+        return False
+    # Co-ed rules
+    if len(players.intersection(girls_on_court)) < 2:
+        return False
+    return True
+
+
+def generate_lineups():
+    for s in can_play_setter:
+        for oh1, oh2 in combinations(can_play_outside, 2):
+            for mb1, mb2 in combinations(can_play_middle, 2):
+                for opp in can_play_opp:
+                    for lib in can_play_libero:
+                        yield {
+                            "s": s,
+                            "oh1": oh1,
+                            "oh2": oh2,
+                            "mb1": mb1,
+                            "mb2": mb2,
+                            "opp": opp,
+                            "lib": lib
+                        }
+
+
+def generate_valid_lineups():
+    for lineup in generate_lineups():
+        if is_lineup_valid(lineup):
+            yield lineup
 
 
 def constraints_satisfied_for(match):
@@ -79,9 +92,15 @@ def constraints_satisfied_for(match):
         return False
     return True
 
-for match in combinations(valid_lineups, 3):
-    if not constraints_satisfied_for(match):
-        continue
-    print("THIS WORKS")
-    for lineup in match:
-        pprint(lineup)
+
+def produce_match_lineups():
+    for match in combinations(generate_valid_lineups(), 3):
+        if not constraints_satisfied_for(match):
+            continue
+        print("THIS WORKS")
+        for lineup in match:
+            pprint(lineup)
+
+
+if __name__ == "__main__":
+    produce_match_lineups()
