@@ -8,7 +8,7 @@ Just gotta make sure the names of players are identifiable enough XD.
 
 Limitations:
 * A match will either use a libero for all 3 sets or won't use a libero at all (easy change, but prioritize the other changes)
-* Difficult to unit test but doable if we dependency inject all the Team Constraint Definitions globals
+* Not unit tested, but can be unit tested pretty easily since I made all the functions pure
 * No way to compare the strengths of the lineups
 
 Instructions on using this program:
@@ -26,29 +26,31 @@ from pprint import pprint
 """
 Team Constraint Definitions
 """
-can_play_setter = frozenset(["Michelle", "Jasper", "Melissa"])
-can_play_outside = frozenset(["Richard", "Daniel", "Steven", "Tiff"])
-can_play_opp = frozenset(["Chau", "Chris", "Michelle", "Jasper", "Tiff", "Melissa"])
-can_play_middle = frozenset(["Steven", "Daniel", "Chris", "Chau", "Jasper"])
-can_play_libero = frozenset(["Bri"])
+constraints = {
+    "can_play_setter" : frozenset(["Michelle", "Jasper", "Melissa"]),
+    "can_play_outside" : frozenset(["Richard", "Daniel", "Steven", "Tiff"]),
+    "can_play_opp" : frozenset(["Chau", "Chris", "Michelle", "Jasper", "Tiff", "Melissa"]),
+    "can_play_middle" : frozenset(["Steven", "Daniel", "Chris", "Chau", "Jasper"]),
+    "can_play_libero" : frozenset(["Bri"]),
 
-# Not counting libero because this is girls on the court at all times.
-girls_non_libero = frozenset(["Michelle", "Tiff", "Melissa"])
+    # Not counting libero because this is girls on the court at all times.
+    "girls_non_libero" : frozenset(["Michelle", "Tiff", "Melissa"]),
 
-# These people can bring a lot of points as hitters.
-cannons = frozenset(["Richard", "Chris"])
+    # These people can bring a lot of points as hitters.
+    "cannons" : frozenset(["Richard", "Chris"]),
 
-# Very flexible players may not have a preference.
-preferences = {
-    "Richard": frozenset(["oh1", "oh2"]),
-    "Daniel": frozenset(["oh1", "oh2"]),
-    "Chau": frozenset(["opp"]),
-    "Tiff": frozenset(["oh1", "oh2"]),
-    "Jasper": frozenset(["s"]),
-    "Michelle": frozenset(["s"]),
-    "Bri": frozenset(["lib"]),
-    "Steven": frozenset(["oh1", "oh2"]),
-    "Melissa": frozenset(["s"]),
+    # Very flexible players may not have a preference.
+    "preferences" : {
+        "Richard": frozenset(["oh1", "oh2"]),
+        "Daniel": frozenset(["oh1", "oh2"]),
+        "Chau": frozenset(["opp"]),
+        "Tiff": frozenset(["oh1", "oh2"]),
+        "Jasper": frozenset(["s"]),
+        "Michelle": frozenset(["s"]),
+        "Bri": frozenset(["lib"]),
+        "Steven": frozenset(["oh1", "oh2"]),
+        "Melissa": frozenset(["s"]),
+    }
 }
 
 
@@ -56,32 +58,32 @@ preferences = {
 Inputs to all these functions can be treated as immutable. Would use a frozendict if it existed w/o
 bringing in a dependency.
 
-Functions are pure and only depend on the (immutable) input and immutable globals.
+Functions are pure and only depend on the immutable input.
 """
-def is_lineup_valid(lineup):
+def is_lineup_valid(constraints, lineup):
     players = set(lineup.values())
     # No duplicate players in lineup
     if len(players) != len(lineup):
         return False
     # Need firepower cuz we div-4
-    if not any(player in players for player in cannons):
+    if not any(player in players for player in constraints["cannons"]):
         return False
     # Co-ed rules
     if "lib" in lineup:
         players.remove(lineup["lib"])
-    if len(players.intersection(girls_non_libero)) < 2:
+    if len(players.intersection(constraints["girls_non_libero"])) < 2:
         return False
     return True
 
 
-def generate_lineups():
-    has_libero = len(can_play_libero) > 0
-    for s in can_play_setter:
-        for oh1, oh2 in combinations(can_play_outside, 2):
-            for mb1, mb2 in combinations(can_play_middle, 2):
-                for opp in can_play_opp:
+def generate_lineups(constraints):
+    has_libero = len(constraints["can_play_libero"]) > 0
+    for s in constraints["can_play_setter"]:
+        for oh1, oh2 in combinations(constraints["can_play_outside"], 2):
+            for mb1, mb2 in combinations(constraints["can_play_middle"], 2):
+                for opp in constraints["can_play_opp"]:
                     if has_libero:
-                        for lib in can_play_libero:
+                        for lib in constraints["can_play_libero"]:
                             yield {
                                 "s": s,
                                 "oh1": oh1,
@@ -103,15 +105,16 @@ def generate_lineups():
                             
 
 
-def generate_valid_lineups():
-    for lineup in generate_lineups():
-        if is_lineup_valid(lineup):
+def generate_valid_lineups(constraints):
+    for lineup in generate_lineups(constraints):
+        if is_lineup_valid(constraints, lineup):
             yield lineup
 
 
-def constraints_satisfied_for(match):
+def constraints_satisfied_for(constraints, match):
     games_played = defaultdict(int)
     played_preferred_pos = set()
+    preferences = constraints["preferences"]
     for lineup in match:
         for pos, player in lineup.items():
             games_played[player] += 1
@@ -124,10 +127,10 @@ def constraints_satisfied_for(match):
     return True
 
 
-def produce_match_lineups():
+def produce_match_lineups(constraints):
     n_working_matches = 0
-    for match in combinations(generate_valid_lineups(), 3):
-        if not constraints_satisfied_for(match):
+    for match in combinations(generate_valid_lineups(constraints), 3):
+        if not constraints_satisfied_for(constraints, match):
             continue
         print("THIS WORKS")
         n_working_matches += 1
@@ -137,4 +140,4 @@ def produce_match_lineups():
 
 
 if __name__ == "__main__":
-    produce_match_lineups()
+    produce_match_lineups(constraints)
