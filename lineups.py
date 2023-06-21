@@ -7,13 +7,16 @@ and purely using strings.
 Just gotta make sure the names of players are identifiable enough XD.
 
 Limitations:
-* A match will either use a libero for all 3 sets or won't use a libero at all.
+* A match will either use a libero for all 3 sets or won't use a libero at all (easy change, but prioritize the other changes)
+* Difficult to unit test but doable if we dependency inject all the Team Constraint Definitions globals
+* No way to compare the strengths of the lineups
 
 Instructions on using this program:
 1. Update the definitions under "Team Constraint Definitions" for players that will be in/out.
    If a player is out, their name should NOT appear in *any* of the team constraint definitions
    (remember to update preferences too!).
-2. Run `python3 lineups.py` on the command line.
+2. Save the file.
+3. Run `python3 lineups.py` on the command line.
 """
 
 from collections import defaultdict
